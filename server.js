@@ -1,22 +1,36 @@
-const io = require("socket.io")(3000) //create server on port 3000
-const http = require('http')
-const fs = require('fs')
+if(process.env.NODE_ENV !== "production"){
+    require('dotenv').config()
+}
+
 const port = 3000;
-const user
 
-const server = http.createServer(function(req, res){
-    res.writeHead({'Content-Type': 'text/html'});
+const names = ['user1', 'user2', 'user3'];
 
-});
+const io = require("socket.io")(port)
 
-// https://www.youtube.com/watch?v=VShtPwEkDD0&list=PLZlA0Gpn_vH_uZs4vJMIhcinABSTUH2bY&index=1 creating server
+function isValid(obj){
+    return names.includes(obj);
+}
 
 io.on('connection', socket => {
     console.log("New User");
     // socket.emit('chat-message', 'Hello World'); //if someone connects, they get hello world
+    
+    socket.on('login-try', credentials => {
+        // do login
+        if(isValid(credentials)){
+            socket.emit('login-attempt', true);
+            socket.broadcast.emit('chat-message', credentials + "has joined the chat.")
+        }
+        else{
+            socket.emit('login-attempt', false);
+        }
+    })
+
+    
     socket.on('send-chat-message', message => {
         console.log(message);
-        socket.broadcast.emit('chat-message', message);
+        const from = message.sender;
+        socket.broadcast.emit('chat-message', from + ": " + message.content);
     });
 });
-
